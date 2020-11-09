@@ -21,7 +21,7 @@ calculate_offense_metrics <- function(data) {
   # ✔️Off Int Rate : interceptions per pass attempt
   # ✔️Off Pen Rate : penalty yards per total number of plays
   # ✔️Off Run Yds/Att
-  mutate(
+  tmpData <- mutate(
     data,
     OffPassYardsPerAttempt = Yds.1 / Att,
     OffRunYardsPerAttempt = Yds.2 / Att.1,
@@ -36,15 +36,21 @@ calculate_offense_metrics <- function(data) {
     OffIntRate,
     OffFumbleRate
   )
+
+  # TODO: Calculate Z for each
+
+  return(tmpData)
 }
 
 calculate_defense_metrics <- function(data) {
   # Def Pass Yds/Att
   # Def FFumble Rate
+  # TODO: Currently using Fumbles; Needs to be Forced Fumbles only
   # Def Int Rate
   # Def Run Yds/Att
   # Also: Def Penalty Yards Per Play
-  mutate(
+
+  tmpData <- mutate(
     data,
     DefPassYardsPerAttempt = Yds.1 / Att,
     DefRunYardsPerAttempt = Yds.2 / Att.1,
@@ -59,33 +65,70 @@ calculate_defense_metrics <- function(data) {
     DefIntRate,
     DefFumbleRate
   )
+  # Calculate overall mean, sd for each field
+  DefPassYardsPerAttemptMean = mean(tmpData$DefPassYardsPerAttempt)
+  DefPassYardsPerAttemptSd = sd(tmpData$DefPassYardsPerAttempt)
+
+  DefRunYardsPerAttemptMean = mean(tmpData$DefRunYardsPerAttempt)
+  DefRunYardsPerAttemptSd = sd(tmpData$DefRunYardsPerAttempt)
+
+  DefPenYardsPerPlayMean = mean(tmpData$DefPenYardsPerPlay)
+  DefPenYardsPerPlaySd = sd(tmpData$DefPenYardsPerPlay)
+
+  DefIntRateMean = mean(tmpData$DefIntRate)
+  DefIntRateSd = sd(tmpData$DefIntRate)
+
+  DefFumbleRateMean = mean(tmpData$DefFumbleRate)
+  DefFumbleRateSd = sd(tmpData$DefFumbleRate)
+
+  # Calculate Stddev weighted value for each metric
+  tmpData <- mutate(
+    tmpData,
+    ZDefPassYardsPerAttempt = (DefPassYardsPerAttempt - DefPassYardsPerAttemptMean) /
+      DefPassYardsPerAttemptSd,
+    ZDefRunYardsPerAttempt = (DefRunYardsPerAttempt - DefRunYardsPerAttemptMean) / DefRunYardsPerAttemptSd,
+    ZDefPenYardsPerPlay = (DefPenYardsPerPlay - DefPenYardsPerPlayMean) / DefPenYardsPerPlaySd,
+    ZDefIntRate = (DefIntRate - DefIntRateMean) / DefIntRateSd,
+    ZDefFumbleRate = (DefFumbleRate - DefFumbleRateMean) / DefFumbleRateSd
+  )
+
+  return(tmpData)
 }
 
 build_stats_for_year <- function(year) {
   # Remove * and + from team name
   afc <-
-    read_file_for_year(year, "afc") %>% clean_winner_star_plus()
+    read_file_for_year(year, "afc") %>% clean_winner_star_plus() %>% select(Tm, W)
   nfc <-
-    read_file_for_year(year, "nfc") %>% clean_winner_star_plus()
+    read_file_for_year(year, "nfc") %>% clean_winner_star_plus() %>% select(Tm, W)
+  nflTeams <- bind_rows(afc, nfc)
 
   offense <-
     read_file_for_year(year, "offense", 1) %>% calculate_offense_metrics()
   defense <-
     read_file_for_year(year, "defense", 1) %>% calculate_defense_metrics()
 
-  # Calculate avg, stddev
-  # Calculate ZOffYardsPerAttempt, etc.
   # merge() on Tm so wins and off/def stats are in a single frame
+  offenseWithWins <- merge(nflTeams, offense)
+  allColumns <- merge(offenseWithWins, defense)
+
   # Build lm model
+  # TODO: Build model from all years
+  m <- lm(
+    W ~ ZDefPassYardsPerAttempt + ZDefRunYardsPerAttempt + ZDefPenYardsPerPlay + ZDefIntRate + ZDefFumbleRate,
+    data = allColumns
+  )
   # Add field to each row with ActualWins and PredictedWins
   # Chart ActualWins and PredictedWins
 
   # For debugging
   d <- dict()
-  d[["afc"]] <- afc
-  d[["nfc"]] <- nfc
+  d[["nflTeams"]] <- nflTeams
   d[["offense"]] <- offense
   d[["defense"]] <- defense
+  d[["allColumns"]] <- allColumns
+  d[["m"]] <- m
+
   return(d)
 }
 
