@@ -176,13 +176,9 @@ plot_wins <- function(data) {
     geom_line() + geom_point() +
     # Styling
     ylim(0, 16) + theme_minimal() +
-    labs(title = "Predicted (grey) vs Actual Wins") +
-    scale_colour_discrete(name  =
-                            "Wins",
-                          labels =
-                            c("Predicted", "Actual")) +
-    theme(legend.position =
-            "none") + facet_wrap( ~ Tm)
+    labs(title = "NFL Predicted vs Actual Wins, 2002-2019",
+         subtitle = "Predicted wins (grey) calculated from offense, defense, and turnover efficiency metrics") +
+    facet_wrap(~ Tm) + style_fonts("Sentinel", "Avenir", "InputSans")
   ggsave(
     plot = chart,
     filename = "wins.png",
@@ -191,6 +187,38 @@ plot_wins <- function(data) {
   )
 }
 
+style_fonts <-
+  function(title_font,
+           subtitle_font,
+           mono_font) {
+    theme(
+      plot.title = ggplot2::element_text(
+        family = title_font,
+        size = 36,
+        face = "bold",
+        color = "#222222"
+      )
+    ) + theme(strip.text = ggplot2::element_text(family = subtitle_font,
+                                                 size = 10)) + theme(
+                                                   plot.subtitle = ggplot2::element_text(
+                                                     family = subtitle_font,
+                                                     size = 22,
+                                                     margin = ggplot2::margin(7, 0, 9, 0)
+                                                   )
+                                                 ) + theme(
+                                                   legend.text = ggplot2::element_text(
+                                                     family = subtitle_font,
+                                                     size = 18,
+                                                     color = "#222222"
+                                                   ),
+                                                   axis.text = ggplot2::element_text(
+                                                     family = mono_font,
+                                                     size = 8,
+                                                     color = "#222222"
+                                                   )
+                                                 )
+  }
+
 run_report <- function(start_year, end_year) {
   data <- load_data(start_year, end_year)
   # Run regression model on all years.
@@ -198,8 +226,9 @@ run_report <- function(start_year, end_year) {
 
   # Add field to each row of `data` with PredictedW
   data <-
-    mutate(data, PredictedW = predict(nflWinModel, data[row_number(), ]))
+    mutate(data, PredictedW = predict(nflWinModel, data[row_number(),]))
   plot_wins(data)
 }
+
 
 run_report(2002, 2019)
