@@ -5,6 +5,7 @@
 library("tidyverse")
 #library("GGally")
 library(dict)
+library(ggplot2)
 
 read_file_for_year <- function(year, name, skip = 0) {
   read.csv(str_interp("data/${year}/${name}.csv"), skip = skip)
@@ -129,17 +130,19 @@ build_stats_for_year <- function(year) {
   nflTeams <- bind_rows(afc, nfc)
 
   offense <-
-    read_file_for_year(year, "offense", 1) %>% calculate_offense_metrics()
+    read_file_for_year(year, "offense", 1) %>% filter(G > 0) %>% calculate_offense_metrics()
   defense <-
-    read_file_for_year(year, "defense", 1) %>% calculate_defense_metrics()
+    read_file_for_year(year, "defense", 1) %>% filter(G > 0) %>% calculate_defense_metrics()
 
   # merge() on Tm so wins and off/def stats are in a single frame
-  offenseWithWins <- merge(nflTeams, offense)
-  allColumns <- merge(offenseWithWins, defense)
+  data <-
+    merge(nflTeams, offense) %>% merge(defense) %>% mutate(Year = year)
 
-  # Build lm model
-  # TODO: Build model from all years
-  m <- lm(
+  return(data)
+}
+
+build_regression_model <- function(data) {
+  lm(
     W ~ ZDefPassYardsPerAttempt +
       ZDefRunYardsPerAttempt +
       ZDefPenYardsPerPlay +
@@ -150,26 +153,43 @@ build_stats_for_year <- function(year) {
       ZOffPenYardsPerPlay +
       ZOffIntRate  +
       ZOffFumbleRate,
-    data = allColumns
+    data = data
   )
-
-  # Add field to each row with ActualWins and PredictedWins
-  # Chart ActualWins and PredictedWins
-
-  # For debugging
-  d <- dict()
-  d[["nflTeams"]] <- nflTeams
-  d[["offense"]] <- offense
-  d[["defense"]] <- defense
-  d[["allColumns"]] <- allColumns
-  d[["m"]] <- m
-
-  return(d)
 }
 
-# TODO: For each year, build stats and `bind_rows()` to append to full dataset
-#for (i in seq(2002, 2019, by=1)) {
-#  stats <- build_stats_for_year(i)
-#  bind rows to full dataset
-#}
-stats <- build_stats_for_year(2019)
+
+# For each year, build stats.
+data <- data.frame()
+for (i in seq(2002, 2006, by = 1)) {
+  stats <- build_stats_for_year(i)
+  data <- bind_rows(data, stats)
+}
+# Run regression model on all years.
+nflWinModel <- build_regression_model(data)
+
+#nflWinModel <- build_regression_model(build_stats_for_year(2003))
+
+# Add field to each row of `data` with PredictedW
+data <-
+  mutate(data, PredictedW = predict(nflWinModel, data[row_number(),]))
+
+# Chart ActualWins and PredictedWins
+chart <-
+  ggplot(data = data, aes(x = Year, y =
+                            W)) +
+  # Predicted
+  geom_line(aes(x = Year, y = PredictedW), color = "grey") +
+  geom_point(aes(x =
+                   Year, y = PredictedW), color = "grey") +
+  # Actual
+  geom_line() + geom_point() +
+  # Styling
+  ylim(0, 16) + theme_minimal() +
+  labs(title = "Predicted (grey) vs Actual Wins") +
+  scale_colour_discrete(name  =
+                          "Wins",
+                        labels =
+                          c("Predicted", "Actual")) +
+  theme(legend.position =
+          "none") + facet_wrap(~ Tm)
+ggsave(plot = chart, filename = "wins.png")
