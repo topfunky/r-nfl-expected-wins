@@ -160,7 +160,7 @@ build_regression_model <- function(data) {
 
 # For each year, build stats.
 data <- data.frame()
-for (i in seq(2002, 2006, by = 1)) {
+for (i in seq(2002, 2019, by = 1)) {
   stats <- build_stats_for_year(i)
   data <- bind_rows(data, stats)
 }
