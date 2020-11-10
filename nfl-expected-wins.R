@@ -1,10 +1,6 @@
 #if (!require("devtools")) install.packages("devtools")
-#devtools::install_github("mkuhn/dict")
 #install.packages("tidyverse")
-#install.packages("GGally")
-library("tidyverse")
-#library("GGally")
-library(dict)
+library(tidyverse)
 library(ggplot2)
 
 read_file_for_year <- function(year, name, skip = 0) {
@@ -28,7 +24,7 @@ calculate_offense_metrics <- function(data) {
     OffRunYardsPerAttempt = Yds.2 / Att.1,
     OffPenYardsPerPlay = Yds.3 / Ply,
     OffIntRate = Int / Att,
-    OffFumbleRate = FL / Att
+    OffFumbleRate = FL / Ply
   ) %>% select(
     Tm,
     OffPassYardsPerAttempt,
@@ -70,7 +66,7 @@ calculate_offense_metrics <- function(data) {
 
 calculate_defense_metrics <- function(data) {
   # Def Pass Yds/Att
-  # Def FFumble Rate
+  # Def FFumble Rate : Fumbles per total plays
   # TODO: Currently using Fumbles; Needs to be Forced Fumbles only
   # Def Int Rate
   # Def Run Yds/Att
@@ -82,7 +78,7 @@ calculate_defense_metrics <- function(data) {
     DefRunYardsPerAttempt = Yds.2 / Att.1,
     DefPenYardsPerPlay = Yds.3 / Ply,
     DefIntRate = Int / Att,
-    DefFumbleRate = FL / Att
+    DefFumbleRate = FL / Ply
   ) %>% select(
     Tm,
     DefPassYardsPerAttempt,
@@ -157,39 +153,53 @@ build_regression_model <- function(data) {
   )
 }
 
-
-# For each year, build stats.
-data <- data.frame()
-for (i in seq(2002, 2019, by = 1)) {
-  stats <- build_stats_for_year(i)
-  data <- bind_rows(data, stats)
+load_data <- function(start_year, end_year) {
+  # For each year, build stats.
+  data <- data.frame()
+  for (i in seq(start_year, end_year, by = 1)) {
+    stats <- build_stats_for_year(i)
+    data <- bind_rows(data, stats)
+  }
+  return(data)
 }
-# Run regression model on all years.
-nflWinModel <- build_regression_model(data)
 
-#nflWinModel <- build_regression_model(build_stats_for_year(2003))
+plot_wins <- function(data) {
+  # Chart ActualWins and PredictedWins
+  chart <-
+    ggplot(data = data, aes(x = Year, y =
+                              W)) +
+    # Predicted
+    geom_line(aes(x = Year, y = PredictedW), color = "grey") +
+    geom_point(aes(x =
+                     Year, y = PredictedW), color = "grey") +
+    # Actual
+    geom_line() + geom_point() +
+    # Styling
+    ylim(0, 16) + theme_minimal() +
+    labs(title = "Predicted (grey) vs Actual Wins") +
+    scale_colour_discrete(name  =
+                            "Wins",
+                          labels =
+                            c("Predicted", "Actual")) +
+    theme(legend.position =
+            "none") + facet_wrap( ~ Tm)
+  ggsave(
+    plot = chart,
+    filename = "wins.png",
+    width = 16,
+    height = 9
+  )
+}
 
-# Add field to each row of `data` with PredictedW
-data <-
-  mutate(data, PredictedW = predict(nflWinModel, data[row_number(),]))
+run_report <- function(start_year, end_year) {
+  data <- load_data(start_year, end_year)
+  # Run regression model on all years.
+  nflWinModel <- build_regression_model(data)
 
-# Chart ActualWins and PredictedWins
-chart <-
-  ggplot(data = data, aes(x = Year, y =
-                            W)) +
-  # Predicted
-  geom_line(aes(x = Year, y = PredictedW), color = "grey") +
-  geom_point(aes(x =
-                   Year, y = PredictedW), color = "grey") +
-  # Actual
-  geom_line() + geom_point() +
-  # Styling
-  ylim(0, 16) + theme_minimal() +
-  labs(title = "Predicted (grey) vs Actual Wins") +
-  scale_colour_discrete(name  =
-                          "Wins",
-                        labels =
-                          c("Predicted", "Actual")) +
-  theme(legend.position =
-          "none") + facet_wrap(~ Tm)
-ggsave(plot = chart, filename = "wins.png")
+  # Add field to each row of `data` with PredictedW
+  data <-
+    mutate(data, PredictedW = predict(nflWinModel, data[row_number(), ]))
+  plot_wins(data)
+}
+
+run_report(2002, 2019)
