@@ -37,7 +37,32 @@ calculate_offense_metrics <- function(data) {
     OffFumbleRate
   )
 
-  # TODO: Calculate Z for each
+  # Calculate overall mean, sd for each field
+  OffPassYardsPerAttemptMean = mean(tmpData$OffPassYardsPerAttempt)
+  OffPassYardsPerAttemptSd = sd(tmpData$OffPassYardsPerAttempt)
+
+  OffRunYardsPerAttemptMean = mean(tmpData$OffRunYardsPerAttempt)
+  OffRunYardsPerAttemptSd = sd(tmpData$OffRunYardsPerAttempt)
+
+  OffPenYardsPerPlayMean = mean(tmpData$OffPenYardsPerPlay)
+  OffPenYardsPerPlaySd = sd(tmpData$OffPenYardsPerPlay)
+
+  OffIntRateMean = mean(tmpData$OffIntRate)
+  OffIntRateSd = sd(tmpData$OffIntRate)
+
+  OffFumbleRateMean = mean(tmpData$OffFumbleRate)
+  OffFumbleRateSd = sd(tmpData$OffFumbleRate)
+
+  # Calculate Stddev weighted value for each metric
+  tmpData <- mutate(
+    tmpData,
+    ZOffPassYardsPerAttempt = (OffPassYardsPerAttempt - OffPassYardsPerAttemptMean) /
+      OffPassYardsPerAttemptSd,
+    ZOffRunYardsPerAttempt = (OffRunYardsPerAttempt - OffRunYardsPerAttemptMean) / OffRunYardsPerAttemptSd,
+    ZOffPenYardsPerPlay = (OffPenYardsPerPlay - OffPenYardsPerPlayMean) / OffPenYardsPerPlaySd,
+    ZOffIntRate = (OffIntRate - OffIntRateMean) / OffIntRateSd,
+    ZOffFumbleRate = (OffFumbleRate - OffFumbleRateMean) / OffFumbleRateSd
+  )
 
   return(tmpData)
 }
@@ -115,9 +140,19 @@ build_stats_for_year <- function(year) {
   # Build lm model
   # TODO: Build model from all years
   m <- lm(
-    W ~ ZDefPassYardsPerAttempt + ZDefRunYardsPerAttempt + ZDefPenYardsPerPlay + ZDefIntRate + ZDefFumbleRate,
+    W ~ ZDefPassYardsPerAttempt +
+      ZDefRunYardsPerAttempt +
+      ZDefPenYardsPerPlay +
+      ZDefIntRate +
+      ZDefFumbleRate +
+      ZOffPassYardsPerAttempt +
+      ZOffRunYardsPerAttempt +
+      ZOffPenYardsPerPlay +
+      ZOffIntRate  +
+      ZOffFumbleRate,
     data = allColumns
   )
+
   # Add field to each row with ActualWins and PredictedWins
   # Chart ActualWins and PredictedWins
 
@@ -132,4 +167,9 @@ build_stats_for_year <- function(year) {
   return(d)
 }
 
+# TODO: For each year, build stats and `bind_rows()` to append to full dataset
+#for (i in seq(2002, 2019, by=1)) {
+#  stats <- build_stats_for_year(i)
+#  bind rows to full dataset
+#}
 stats <- build_stats_for_year(2019)
