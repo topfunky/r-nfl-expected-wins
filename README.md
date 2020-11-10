@@ -13,7 +13,7 @@ An article from 2007 outlined an approach for calculating expected wins based on
 
 ## Chart
 
-![Predicted vs Actual Wins](https://topfunky.com/clients/topfunky/github/wins.png)
+![Predicted vs Actual Wins](https://topfunky.com/clients/topfunky/github/wins-20201110.png)
 
 ## Output
 
