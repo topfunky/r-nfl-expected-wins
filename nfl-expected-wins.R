@@ -175,10 +175,15 @@ plot_wins <- function(data) {
     # Actual
     geom_line() + geom_point() +
     # Styling
-    ylim(0, 16) + theme_minimal() +
-    labs(title = "NFL Predicted vs Actual Wins, 2002-2019",
-         subtitle = "Predicted wins (grey) calculated from offense, defense, and turnover efficiency metrics") +
-    facet_wrap( ~ Tm) + style_fonts("Sentinel", "Avenir", "InputSans")
+    scale_y_continuous(breaks = seq(0, 16, by = 4)) +
+    theme_minimal()  + style_fonts("Sentinel", "Avenir", "InputSans") +
+    labs(
+      title = "NFL Predicted vs Actual Wins, 2002-2019",
+      subtitle = "Predicted wins (grey) calculated from offense, defense, and turnover efficiency metrics",
+      y = "Wins",
+      caption = "Based on data from pro-football-reference.com"
+    ) +
+    facet_wrap( ~ Tm)
   ggsave(
     plot = chart,
     filename = "wins.png",
@@ -197,37 +202,31 @@ style_fonts <-
         size = 36,
         face = "bold",
         color = "#222222"
+      ),
+      strip.text = ggplot2::element_text(family = subtitle_font,
+                                         size = 10),
+      plot.subtitle = ggplot2::element_text(
+        family = subtitle_font,
+        size = 22,
+        margin = ggplot2::margin(7, 0, 9, 0)
+      ),
+      plot.caption = ggplot2::element_text(family = subtitle_font),
+      axis.title = ggplot2::element_text(family = subtitle_font,
+                                         size = 18),
+      legend.text = ggplot2::element_text(
+        family = subtitle_font,
+        size = 18,
+        color = "#222222"
+      ),
+      axis.text = ggplot2::element_text(
+        family = mono_font,
+        size = 8,
+        color = "#222222"
       )
-    ) + theme(strip.text = ggplot2::element_text(family = subtitle_font,
-                                                 size = 10)) +
-      theme(
-        plot.subtitle = ggplot2::element_text(
-          family = subtitle_font,
-          size = 22,
-          margin = ggplot2::margin(7, 0, 9, 0)
-        )
-      ) +
-      theme(
-        axis.title = ggplot2::element_text(
-          family = subtitle_font,
-          size = 18
-        )
-      ) +
-      theme(
-        legend.text = ggplot2::element_text(
-          family = subtitle_font,
-          size = 18,
-          color = "#222222"
-        ),
-        axis.text = ggplot2::element_text(
-          family = mono_font,
-          size = 8,
-          color = "#222222"
-        )
-      )
+    )
   }
 
-run_report <- function(start_year, end_year) {
+run_report_for_years <- function(start_year, end_year) {
   data <- load_data(start_year, end_year)
   # Run regression model on all years.
   nflWinModel <- build_regression_model(data)
@@ -239,4 +238,4 @@ run_report <- function(start_year, end_year) {
 }
 
 
-run_report(2002, 2019)
+run_report_for_years(2002, 2019)
