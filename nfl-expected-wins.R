@@ -70,32 +70,24 @@ calculate_defense_metrics <- function(data) {
   # TODO: Currently using Fumbles; Needs to be Forced Fumbles only
   # Def Int Rate
   # Def Run Yds/Att
-  # Also: Def Penalty Yards Per Play
 
   tmpData <- mutate(
     data,
     DefPassYardsPerAttempt = Yds.1 / Att,
     DefRunYardsPerAttempt = Yds.2 / Att.1,
-    DefPenYardsPerPlay = Yds.3 / Ply,
     DefIntRate = Int / Att,
     DefFumbleRate = FL / Ply
-  ) %>% select(
-    Tm,
-    DefPassYardsPerAttempt,
-    DefRunYardsPerAttempt,
-    DefPenYardsPerPlay,
-    DefIntRate,
-    DefFumbleRate
-  )
+  ) %>% select(Tm,
+               DefPassYardsPerAttempt,
+               DefRunYardsPerAttempt,
+               DefIntRate,
+               DefFumbleRate)
   # Calculate overall mean, sd for each field
   DefPassYardsPerAttemptMean = mean(tmpData$DefPassYardsPerAttempt)
   DefPassYardsPerAttemptSd = sd(tmpData$DefPassYardsPerAttempt)
 
   DefRunYardsPerAttemptMean = mean(tmpData$DefRunYardsPerAttempt)
   DefRunYardsPerAttemptSd = sd(tmpData$DefRunYardsPerAttempt)
-
-  DefPenYardsPerPlayMean = mean(tmpData$DefPenYardsPerPlay)
-  DefPenYardsPerPlaySd = sd(tmpData$DefPenYardsPerPlay)
 
   DefIntRateMean = mean(tmpData$DefIntRate)
   DefIntRateSd = sd(tmpData$DefIntRate)
@@ -109,7 +101,6 @@ calculate_defense_metrics <- function(data) {
     ZDefPassYardsPerAttempt = (DefPassYardsPerAttempt - DefPassYardsPerAttemptMean) /
       DefPassYardsPerAttemptSd,
     ZDefRunYardsPerAttempt = (DefRunYardsPerAttempt - DefRunYardsPerAttemptMean) / DefRunYardsPerAttemptSd,
-    ZDefPenYardsPerPlay = (DefPenYardsPerPlay - DefPenYardsPerPlayMean) / DefPenYardsPerPlaySd,
     ZDefIntRate = (DefIntRate - DefIntRateMean) / DefIntRateSd,
     ZDefFumbleRate = (DefFumbleRate - DefFumbleRateMean) / DefFumbleRateSd
   )
@@ -141,7 +132,6 @@ build_regression_model <- function(data) {
   lm(
     W ~ ZDefPassYardsPerAttempt +
       ZDefRunYardsPerAttempt +
-      ZDefPenYardsPerPlay +
       ZDefIntRate +
       ZDefFumbleRate +
       ZOffPassYardsPerAttempt +
@@ -163,11 +153,14 @@ load_data <- function(start_year, end_year) {
   return(data)
 }
 
-plot_wins <- function(data) {
+plot_wins <- function(data, start_year, end_year) {
   # Chart ActualWins and PredictedWins
   chart <-
     ggplot(data = data, aes(x = Year, y =
                               W)) +
+    # Reference line: 8 wins
+    geom_hline(yintercept=8, color="#d8d8d8") +
+    geom_vline(xintercept=2020, color="#00cc0022", size=2) +
     # Predicted
     geom_line(aes(x = Year, y = PredictedW), color = "grey") +
     geom_point(aes(x =
@@ -178,7 +171,7 @@ plot_wins <- function(data) {
     scale_y_continuous(breaks = seq(0, 16, by = 4)) +
     theme_minimal()  + style_fonts("Sentinel", "Avenir", "InputSans") +
     labs(
-      title = "NFL Predicted vs Actual Wins, 2002-2019",
+      title = str_interp("NFL Predicted vs Actual Wins, ${start_year}-${end_year}"),
       subtitle = "Predicted wins (grey) calculated from offense, defense, and turnover efficiency metrics",
       y = "Wins",
       caption = "Based on data from pro-football-reference.com"
@@ -226,16 +219,22 @@ style_fonts <-
     )
   }
 
-run_report_for_years <- function(start_year, end_year) {
-  data <- load_data(start_year, end_year)
-  # Run regression model on all years.
-  nflWinModel <- build_regression_model(data)
+run_report <- function() {
+  training_years <- c(2015, 2019)
+  all_years <- c(2002, 2020)
+
+  training_data <- load_data(training_years[1], training_years[2])
+  # Run regression model on training years
+  nflWinModel <- build_regression_model(training_data)
+
+  # Load other years for prediction and display
+  data <- load_data(all_years[1], all_years[2])
 
   # Add field to each row of `data` with PredictedW
   data <-
-    mutate(data, PredictedW = predict(nflWinModel, data[row_number(), ]))
-  plot_wins(data)
+    mutate(data, PredictedW = predict(nflWinModel, data[row_number(),]))
+
+  plot_wins(data, all_years[1], all_years[2])
 }
 
-
-run_report_for_years(2002, 2019)
+run_report()
