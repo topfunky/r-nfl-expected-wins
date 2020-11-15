@@ -111,9 +111,9 @@ calculate_defense_metrics <- function(data) {
 build_stats_for_year <- function(year) {
   # Remove * and + from team name
   afc <-
-    read_file_for_year(year, "afc") %>% clean_winner_star_plus() %>% select(Tm, W)
+    read_file_for_year(year, "afc") %>% clean_winner_star_plus() %>% select(Tm, W, PF, PA)
   nfc <-
-    read_file_for_year(year, "nfc") %>% clean_winner_star_plus() %>% select(Tm, W)
+    read_file_for_year(year, "nfc") %>% clean_winner_star_plus() %>% select(Tm, W, PF, PA)
   nflTeams <- bind_rows(afc, nfc)
 
   offense <-
@@ -126,21 +126,6 @@ build_stats_for_year <- function(year) {
     merge(nflTeams, offense) %>% merge(defense) %>% mutate(Year = year)
 
   return(data)
-}
-
-build_regression_model <- function(data) {
-  lm(
-    W ~ ZDefPassYardsPerAttempt +
-      ZDefRunYardsPerAttempt +
-      ZDefIntRate +
-      ZDefFumbleRate +
-      ZOffPassYardsPerAttempt +
-      ZOffRunYardsPerAttempt +
-      ZOffPenYardsPerPlay +
-      ZOffIntRate  +
-      ZOffFumbleRate,
-    data = data
-  )
 }
 
 load_data <- function(start_year, end_year) {
@@ -160,11 +145,11 @@ plot_wins <- function(data, start_year, end_year) {
                               W)) +
     # Reference line: 8 wins
     geom_hline(yintercept=8, color="#d8d8d8") +
-    geom_vline(xintercept=2020, color="#00cc0022", size=2) +
+    geom_vline(xintercept=2020, color="#00cc00", size=2, alpha=0.1) +
     # Predicted
-    geom_line(aes(x = Year, y = PredictedW), color = "grey") +
-    geom_point(aes(x =
-                     Year, y = PredictedW), color = "grey") +
+    geom_line(aes(x = Year, y = PredictedW), color = "#cc0000", alpha=0.2) +
+    # Pythagorean
+    geom_line(aes(x = Year, y = PythagoreanW), color = "#0000cc", alpha=0.2) +
     # Actual
     geom_line() + geom_point() +
     # Styling
@@ -172,14 +157,19 @@ plot_wins <- function(data, start_year, end_year) {
     theme_minimal()  + style_fonts("Sentinel", "Avenir", "InputSans") +
     labs(
       title = str_interp("NFL Predicted vs Actual Wins, ${start_year}-${end_year}"),
-      subtitle = "Predicted wins (grey) calculated from offense, defense, and turnover efficiency metrics",
+      subtitle = "Predicted wins from an efficiency metrics model (red) and Pythagorean wins (blue)",
       y = "Wins",
       caption = "Based on data from pro-football-reference.com"
     ) +
     facet_wrap( ~ Tm)
+
+  if (!dir.exists("out")) {
+    dir.create("out")
+  }
+
   ggsave(
     plot = chart,
-    filename = "wins.png",
+    filename = "out/wins.png",
     width = 16,
     height = 9
   )
@@ -219,6 +209,27 @@ style_fonts <-
     )
   }
 
+build_regression_model <- function(data) {
+  lm(
+    W ~ ZDefPassYardsPerAttempt +
+      ZDefRunYardsPerAttempt +
+      ZDefIntRate +
+      ZDefFumbleRate +
+      ZOffPassYardsPerAttempt +
+      ZOffRunYardsPerAttempt +
+      ZOffPenYardsPerPlay +
+      ZOffIntRate  +
+      ZOffFumbleRate,
+    data = data
+  )
+}
+
+# Traditional Bill James method for calculating expected wins.
+# https://en.wikipedia.org/wiki/Pythagorean_expectation
+calculate_pythagorean_wins <- function(PF, PA) {
+  (1/(1+(PA/PF)^2))*16
+}
+
 run_report <- function() {
   training_years <- c(2015, 2019)
   all_years <- c(2002, 2020)
@@ -232,7 +243,8 @@ run_report <- function() {
 
   # Add field to each row of `data` with PredictedW
   data <-
-    mutate(data, PredictedW = predict(nflWinModel, data[row_number(),]))
+    mutate(data, PredictedW = predict(nflWinModel, data[row_number(),]),
+           PythagoreanW = calculate_pythagorean_wins(PF, PA))
 
   plot_wins(data, all_years[1], all_years[2])
 }
