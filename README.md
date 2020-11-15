@@ -17,7 +17,7 @@ An article from 2007 outlined an approach for calculating expected wins based on
 
 ## Output
 
-Win correlation coefficients for the original Advanced Football Analytics model, this model trained on the 2002-2006 seasons, and this model trained on 2015-2019 seasons.
+Win correlation coefficients from the original Advanced Football Analytics model, this model trained on the 2002-2006 seasons, and this model trained on 2015-2019 seasons.
 
 |Stat|AFA Cor|GG Cor 2002|GG Cor 2015|
 |----|-------|------|--|
