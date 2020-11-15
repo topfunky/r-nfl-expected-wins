@@ -144,12 +144,21 @@ plot_wins <- function(data, start_year, end_year) {
     ggplot(data = data, aes(x = Year, y =
                               W)) +
     # Reference line: 8 wins
-    geom_hline(yintercept=8, color="#d8d8d8") +
-    geom_vline(xintercept=2020, color="#00cc00", size=2, alpha=0.1) +
+    geom_hline(yintercept = 8, color = "#d8d8d8") +
+    geom_vline(
+      xintercept = 2020,
+      color = "#00cc00",
+      size = 2,
+      alpha = 0.1
+    ) +
     # Predicted
-    geom_line(aes(x = Year, y = PredictedW), color = "#cc0000", alpha=0.2) +
+    geom_line(aes(x = Year, y = PredictedW),
+              color = "#cc0000",
+              alpha = 0.2) +
     # Pythagorean
-    geom_line(aes(x = Year, y = PythagoreanW), color = "#0000cc", alpha=0.2) +
+    geom_line(aes(x = Year, y = PythagoreanW),
+              color = "#0000cc",
+              alpha = 0.2) +
     # Actual
     geom_line() + geom_point() +
     # Styling
@@ -161,7 +170,7 @@ plot_wins <- function(data, start_year, end_year) {
       y = "Wins",
       caption = "Based on data from pro-football-reference.com"
     ) +
-    facet_wrap( ~ Tm)
+    facet_wrap(~ Tm)
 
   if (!dir.exists("out")) {
     dir.create("out")
@@ -227,7 +236,7 @@ build_regression_model <- function(data) {
 # Traditional Bill James method for calculating expected wins.
 # https://en.wikipedia.org/wiki/Pythagorean_expectation
 calculate_pythagorean_wins <- function(PF, PA) {
-  (1/(1+(PA/PF)^2))*16
+  (1 / (1 + (PA / PF) ^ 2)) * 16
 }
 
 run_report <- function() {
@@ -243,7 +252,8 @@ run_report <- function() {
 
   # Add field to each row of `data` with PredictedW
   data <-
-    mutate(data, PredictedW = predict(nflWinModel, data[row_number(),]),
+    mutate(data,
+           PredictedW = predict(nflWinModel, data[row_number(), ]),
            PythagoreanW = calculate_pythagorean_wins(PF, PA))
 
   plot_wins(data, all_years[1], all_years[2])
