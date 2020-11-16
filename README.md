@@ -66,4 +66,7 @@ F-statistic: 46.61 on 9 and 150 DF,  p-value: < 2.2e-16
 
 ## Reference
 
-Data is from [Pro Football Reference](https://www.pro-football-reference.com/).
+Data from:
+
+- [Pro Football Reference](https://www.pro-football-reference.com/)
+- [Football Outsiders](https://www.footballoutsiders.com)
