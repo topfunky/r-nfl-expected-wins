@@ -44,15 +44,5 @@ dvoa_load_data_for_year <- function(year) {
            S.T.DVOA=parse_number(S.T.DVOA),
            Year = year)
 
-  # TODO: Map short team ID to team name (SEA = "Seattle Seahawks")
-  return(data)
-}
-
-dvoa_load_data <- function(start_year, end_year) {
-  data <- data.frame()
-  for (i in seq(start_year, end_year, by = 1)) {
-    stats <- dvoa_load_data_for_year(i)
-    data <- bind_rows(data, stats)
-  }
   return(data)
 }

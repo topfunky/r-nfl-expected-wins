@@ -135,9 +135,14 @@ build_stats_for_year <- function(year) {
   dvoa_data <- dvoa_load_data_for_year(year)
   dvoa_data <- merge(dvoa_data, team_names)
 
-  # merge() on Tm so wins and off/def stats are in a single frame
+  # Merge so all attributes are in a single data frame.
+  #
+  # The correct field name will be detected (Tm or TEAM).
   data <-
-    merge(nflTeams, offense) %>% merge(defense) %>% merge(dvoa_data) %>% mutate(Year = year)
+    merge(nflTeams, offense) %>%
+    merge(defense) %>%
+    merge(dvoa_data) %>%
+    mutate(Year = year)
 
   return(data)
 }
@@ -187,7 +192,7 @@ plot_wins <- function(data, start_year, end_year) {
       y = "Wins",
       caption = "Based on data from pro-football-reference.com and footballoutsiders.com"
     ) +
-    facet_wrap(~ TEAM.MASCOT)
+    facet_wrap( ~ TEAM.MASCOT)
 
   if (!dir.exists("out")) {
     dir.create("out")
@@ -253,10 +258,8 @@ build_regression_model <- function(data) {
 # From Football Outsiders' defense adjusted value over average.
 # https://www.footballoutsiders.com/stats/nfl/team-efficiency/2020
 build_dvoa_regression_model <- function(data) {
-  lm(
-    W ~ OFFENSEDVOA + DEFENSEDVOA + S.T.DVOA,
-    data = data
-  )
+  lm(W ~ OFFENSEDVOA + DEFENSEDVOA + S.T.DVOA,
+     data = data)
 }
 
 # Traditional Bill James method for calculating expected wins.
@@ -279,10 +282,12 @@ run_report <- function() {
 
   # Add field to each row of `data` with PredictedW
   data <-
-    mutate(data,
-           PredictedW = predict(nfl_win_model, data[row_number(), ]),
-           PythagoreanW = calculate_pythagorean_wins(PF, PA),
-           DVOAW = predict(dvoa_win_model, data[row_number(), ]))
+    mutate(
+      data,
+      PredictedW = predict(nfl_win_model, data[row_number(),]),
+      PythagoreanW = calculate_pythagorean_wins(PF, PA),
+      DVOAW = predict(dvoa_win_model, data[row_number(),])
+    )
 
   plot_wins(data, all_years[1], all_years[2])
 }
