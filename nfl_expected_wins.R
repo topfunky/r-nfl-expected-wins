@@ -3,6 +3,16 @@
 library(tidyverse)
 library(ggplot2)
 
+source("dvoa_expected_wins.R")
+
+# Mapping of abbreviation to name to mascot.
+#
+# Example: SEA, "Seattle Seahawks", "Seahawks"
+read_team_names <- function() {
+  read.csv(str_interp("data/team_names.csv"))
+}
+
+# Read basic stats.
 read_file_for_year <- function(year, name, skip = 0) {
   read.csv(str_interp("data/${year}/${name}.csv"), skip = skip)
 }
@@ -121,9 +131,13 @@ build_stats_for_year <- function(year) {
   defense <-
     read_file_for_year(year, "defense", 1) %>% filter(G > 0) %>% calculate_defense_metrics()
 
+  team_names <- read_team_names()
+  dvoa_data <- dvoa_load_data_for_year(year)
+  dvoa_data <- merge(dvoa_data, team_names)
+
   # merge() on Tm so wins and off/def stats are in a single frame
   data <-
-    merge(nflTeams, offense) %>% merge(defense) %>% mutate(Year = year)
+    merge(nflTeams, offense) %>% merge(defense) %>% merge(dvoa_data) %>% mutate(Year = year)
 
   return(data)
 }
@@ -141,8 +155,7 @@ load_data <- function(start_year, end_year) {
 plot_wins <- function(data, start_year, end_year) {
   # Chart ActualWins and PredictedWins
   chart <-
-    ggplot(data = data, aes(x = Year, y =
-                              W)) +
+    ggplot(data = data, aes(x = Year, y = W)) +
     # Reference line: 8 wins
     geom_hline(yintercept = 8, color = "#d8d8d8") +
     geom_vline(
@@ -151,14 +164,18 @@ plot_wins <- function(data, start_year, end_year) {
       size = 2,
       alpha = 0.1
     ) +
-    # Predicted
+    # Predicted wins
     geom_line(aes(x = Year, y = PredictedW),
               color = "#cc0000",
-              alpha = 0.2) +
-    # Pythagorean
+              alpha = 0.5) +
+    # Pythagorean wins
     geom_line(aes(x = Year, y = PythagoreanW),
               color = "#0000cc",
-              alpha = 0.2) +
+              alpha = 0.5) +
+    # DVOA predicted wins
+    geom_line(aes(x = Year, y = DVOAW),
+              color = "#00cccc",
+              alpha = 0.5) +
     # Actual
     geom_line() + geom_point() +
     # Styling
@@ -166,11 +183,11 @@ plot_wins <- function(data, start_year, end_year) {
     theme_minimal()  + style_fonts("Sentinel", "Avenir", "InputSans") +
     labs(
       title = str_interp("NFL Predicted vs Actual Wins, ${start_year}-${end_year}"),
-      subtitle = "Predicted wins from an efficiency metrics model (red) and Pythagorean wins (blue)",
+      subtitle = "Predicted wins from an efficiency metrics model (red), Pythagorean wins (purple), DVOA (turquoise)",
       y = "Wins",
-      caption = "Based on data from pro-football-reference.com"
+      caption = "Based on data from pro-football-reference.com and footballoutsiders.com"
     ) +
-    facet_wrap(~ Tm)
+    facet_wrap(~ TEAM.MASCOT)
 
   if (!dir.exists("out")) {
     dir.create("out")
@@ -233,6 +250,15 @@ build_regression_model <- function(data) {
   )
 }
 
+# From Football Outsiders' defense adjusted value over average.
+# https://www.footballoutsiders.com/stats/nfl/team-efficiency/2020
+build_dvoa_regression_model <- function(data) {
+  lm(
+    W ~ OFFENSEDVOA + DEFENSEDVOA + S.T.DVOA,
+    data = data
+  )
+}
+
 # Traditional Bill James method for calculating expected wins.
 # https://en.wikipedia.org/wiki/Pythagorean_expectation
 calculate_pythagorean_wins <- function(PF, PA) {
@@ -245,7 +271,8 @@ run_report <- function() {
 
   training_data <- load_data(training_years[1], training_years[2])
   # Run regression model on training years
-  nflWinModel <- build_regression_model(training_data)
+  nfl_win_model <- build_regression_model(training_data)
+  dvoa_win_model <- build_dvoa_regression_model(training_data)
 
   # Load other years for prediction and display
   data <- load_data(all_years[1], all_years[2])
@@ -253,8 +280,9 @@ run_report <- function() {
   # Add field to each row of `data` with PredictedW
   data <-
     mutate(data,
-           PredictedW = predict(nflWinModel, data[row_number(), ]),
-           PythagoreanW = calculate_pythagorean_wins(PF, PA))
+           PredictedW = predict(nfl_win_model, data[row_number(), ]),
+           PythagoreanW = calculate_pythagorean_wins(PF, PA),
+           DVOAW = predict(dvoa_win_model, data[row_number(), ]))
 
   plot_wins(data, all_years[1], all_years[2])
 }
