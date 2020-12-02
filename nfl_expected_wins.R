@@ -3,6 +3,8 @@
 library(tidyverse)
 library(ggplot2)
 
+source("theme_darker.R")
+
 source("dvoa_expected_wins.R")
 
 # Mapping of abbreviation to name to mascot.
@@ -163,36 +165,31 @@ plot_wins <- function(data, start_year, end_year, title) {
     ggplot(data = data, aes(x = Year, y = W)) +
     # Reference line: 8 wins
     geom_hline(yintercept = 8, color = "#d8d8d8") +
+    # Vertical line: current year
     geom_vline(
       xintercept = 2020,
-      color = "#00cc00",
-      size = 2,
+      color = "grey90",
+      size = 4,
       alpha = 0.1
     ) +
     # Predicted wins
-    geom_line(aes(x = Year, y = PredictedW),
-              color = "#cc0000",
-              alpha = 0.5) +
+    geom_line(aes(x = Year, y = PredictedW), color="#339999") + # cyan
     # Pythagorean wins
-    geom_line(aes(x = Year, y = PythagoreanW),
-              color = "#0000cc",
-              alpha = 0.5) +
+    geom_line(aes(x = Year, y = PythagoreanW), color="#9933CC") + # magenta
     # DVOA predicted wins
-    geom_line(aes(x = Year, y = DVOAW),
-              color = "#00cccc",
-              alpha = 0.5) +
+    geom_line(aes(x = Year, y = DVOAW), color="#FFCC00") + # yellow
     # Actual
-    geom_line() + geom_point() +
+    geom_line(color="white", size=1.5) + geom_point(color="white") +
     # Styling
     scale_y_continuous(breaks = seq(0, 16, by = 4)) +
     theme_minimal() + style_fonts("Sentinel", "Avenir", "InputSans") +
     labs(
       title = str_interp("${title}, ${start_year}-${end_year}"),
-      subtitle = "Predicted wins from an efficiency metrics model (red), Pythagorean wins (purple), DVOA (turquoise)",
+      subtitle = "Predicted wins from an efficiency metrics model (cyan), Pythagorean wins (magenta), DVOA (yellow)",
       y = "Wins",
       caption = "Based on data from pro-football-reference.com and footballoutsiders.com"
     ) +
-    facet_wrap( ~ TEAM.MASCOT)
+    facet_wrap(~ TEAM.MASCOT)
 }
 
 style_fonts <-
@@ -270,9 +267,9 @@ load_data_and_build_model <- function(training_years, all_years) {
   data <-
     mutate(
       data,
-      PredictedW = predict(nfl_win_model, data[row_number(),]),
+      PredictedW = predict(nfl_win_model, data[row_number(), ]),
       PythagoreanW = calculate_pythagorean_wins(PF, PA),
-      DVOAW = predict(dvoa_win_model, data[row_number(),])
+      DVOAW = predict(dvoa_win_model, data[row_number(), ])
     )
   return(data)
 }
@@ -282,11 +279,17 @@ run_report <- function() {
   all_years <- c(2002, 2020)
 
   data <- load_data_and_build_model(training_years, all_years)
-  plot <- plot_wins(data, all_years[1], all_years[2], "NFL Predicted Wins vs Actual Wins")
 
   if (!dir.exists("out")) {
     dir.create("out")
   }
+
+  plot <-
+    plot_wins(data,
+              all_years[1],
+              all_years[2],
+              "NFL Predicted Wins vs Actual Wins") +
+    theme_darker()
 
   ggsave(
     plot = plot,
@@ -296,14 +299,18 @@ run_report <- function() {
   )
 
   # Just Patriots and Browns
-  data_two_teams <- data %>% filter(TEAM.MASCOT == "Patriots" | TEAM.MASCOT == "Browns")
+  data_two_teams <-
+    data %>% filter(TEAM.MASCOT == "Patriots" |
+                      TEAM.MASCOT == "Browns")
 
-  plot2 <- plot_wins(data_two_teams, all_years[1], all_years[2], "Browns and Patriots")
+  plot2 <-
+    plot_wins(data_two_teams, all_years[1], all_years[2], "Browns and Patriots") +
+    theme_darker()
   ggsave(
     plot = plot2,
     filename = "out/wins-detail.png",
-    width = 16,
-    height = 7
+    width = 12,
+    height = 4
   )
 }
 
