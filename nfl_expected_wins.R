@@ -157,7 +157,7 @@ load_data <- function(start_year, end_year) {
   return(data)
 }
 
-plot_wins <- function(data, start_year, end_year) {
+plot_wins <- function(data, start_year, end_year, title) {
   # Chart ActualWins and PredictedWins
   chart <-
     ggplot(data = data, aes(x = Year, y = W)) +
@@ -185,25 +185,14 @@ plot_wins <- function(data, start_year, end_year) {
     geom_line() + geom_point() +
     # Styling
     scale_y_continuous(breaks = seq(0, 16, by = 4)) +
-    theme_minimal()  + style_fonts("Sentinel", "Avenir", "InputSans") +
+    theme_minimal() + style_fonts("Sentinel", "Avenir", "InputSans") +
     labs(
-      title = str_interp("NFL Predicted vs Actual Wins, ${start_year}-${end_year}"),
+      title = str_interp("${title}, ${start_year}-${end_year}"),
       subtitle = "Predicted wins from an efficiency metrics model (red), Pythagorean wins (purple), DVOA (turquoise)",
       y = "Wins",
       caption = "Based on data from pro-football-reference.com and footballoutsiders.com"
     ) +
     facet_wrap( ~ TEAM.MASCOT)
-
-  if (!dir.exists("out")) {
-    dir.create("out")
-  }
-
-  ggsave(
-    plot = chart,
-    filename = "out/wins.png",
-    width = 16,
-    height = 9
-  )
 }
 
 style_fonts <-
@@ -268,10 +257,7 @@ calculate_pythagorean_wins <- function(PF, PA) {
   (1 / (1 + (PA / PF) ^ 2)) * 16
 }
 
-run_report <- function() {
-  training_years <- c(2015, 2019)
-  all_years <- c(2002, 2020)
-
+load_data_and_build_model <- function(training_years, all_years) {
   training_data <- load_data(training_years[1], training_years[2])
   # Run regression model on training years
   nfl_win_model <- build_regression_model(training_data)
@@ -288,8 +274,37 @@ run_report <- function() {
       PythagoreanW = calculate_pythagorean_wins(PF, PA),
       DVOAW = predict(dvoa_win_model, data[row_number(),])
     )
+  return(data)
+}
 
-  plot_wins(data, all_years[1], all_years[2])
+run_report <- function() {
+  training_years <- c(2015, 2019)
+  all_years <- c(2002, 2020)
+
+  data <- load_data_and_build_model(training_years, all_years)
+  plot <- plot_wins(data, all_years[1], all_years[2], "NFL Predicted Wins vs Actual Wins")
+
+  if (!dir.exists("out")) {
+    dir.create("out")
+  }
+
+  ggsave(
+    plot = plot,
+    filename = "out/wins.png",
+    width = 16,
+    height = 9
+  )
+
+  # Just Patriots and Browns
+  data_two_teams <- data %>% filter(TEAM.MASCOT == "Patriots" | TEAM.MASCOT == "Browns")
+
+  plot2 <- plot_wins(data_two_teams, all_years[1], all_years[2], "Browns and Patriots")
+  ggsave(
+    plot = plot2,
+    filename = "out/wins-detail.png",
+    width = 16,
+    height = 7
+  )
 }
 
 run_report()
