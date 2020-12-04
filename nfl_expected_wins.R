@@ -178,22 +178,23 @@ plot_wins <- function(data, start_year, end_year, title) {
       alpha = 0.1
     ) +
     # Predicted wins
-    geom_line(aes(x = Year, y = PredictedW), color = "#339999") + # cyan
+    geom_line(aes(x = Year, y = PredictedW), color = vividchalk_cyan) +
     # Pythagorean wins
-    geom_line(aes(x = Year, y = PythagoreanW), color = "#9933CC") + # magenta
+    geom_line(aes(x = Year, y = PythagoreanW), color = vividchalk_magenta) +
     # DVOA predicted wins
-    geom_line(aes(x = Year, y = DVOAW), color = "#FFCC00") + # yellow
+    geom_line(aes(x = Year, y = DVOAW), color = vividchalk_yellow) +
     # Actual
-    geom_line(color = "white", size = 1.5) + geom_point(color = "white") +
+    geom_line(color = "white", size = 1) + geom_point(color = "white") +
     # Styling
     scale_y_continuous(breaks = seq(0, 16, by = 4)) +
-    theme_minimal() + style_fonts("Sentinel", "Avenir", "InputSans") +
+    theme_minimal() +
     labs(
       title = str_interp("${title}, ${start_year}-${end_year}"),
       subtitle = "Predicted wins from an efficiency metrics model (cyan), Pythagorean wins (magenta), DVOA (yellow)",
       y = "Wins",
       caption = "Based on data from pro-football-reference.com and footballoutsiders.com"
     ) +
+    theme_darker() +
     facet_wrap(~ TEAM.MASCOT)
 }
 
@@ -210,16 +211,18 @@ plot_models_only <- function(data, start_year, end_year, title) {
       x = 2002,
       y = 10,
       label = "AFA",
-      color = vividchalk_cyan
+      color = vividchalk_cyan,
+      family = "InputMono"
     ) +
     # Pythagorean wins
     geom_line(aes(x = Year, y = PythagoreanW), color = vividchalk_magenta) +
     annotate(
       "text",
-      x = 2013.5,
-      y = 10,
+      x = 2013.75,
+      y = 9,
       label = "Pythagorean",
-      color = vividchalk_magenta
+      color = vividchalk_magenta,
+      family = "InputMono"
     ) +
     # DVOA predicted wins
     geom_line(aes(x = Year, y = DVOAW), color = vividchalk_yellow) +
@@ -228,54 +231,24 @@ plot_models_only <- function(data, start_year, end_year, title) {
       x = 2006,
       y = 5,
       label = "DVOA",
-      color = vividchalk_yellow
+      color = vividchalk_yellow,
+      family = "InputMono"
     ) +
     # Styling
     scale_y_continuous(breaks = seq(0, 16, by = 4)) +
-    theme_minimal() + style_fonts("Sentinel", "Avenir", "InputSans") +
+    theme_minimal() +
     labs(
       title = str_interp("${title}, ${start_year}-${end_year}"),
       subtitle = "Three models",
       y = "Wins",
       caption = "Data from pro-football-reference.com and footballoutsiders.com"
     ) +
+    theme_darker() +
     facet_wrap(~ TEAM.MASCOT)
 }
 
-style_fonts <-
-  function(title_font,
-           subtitle_font,
-           mono_font) {
-    theme(
-      plot.title = ggplot2::element_text(
-        family = title_font,
-        size = 36,
-        face = "bold",
-        color = "#222222"
-      ),
-      strip.text = ggplot2::element_text(family = subtitle_font,
-                                         size = 10),
-      plot.subtitle = ggplot2::element_text(
-        family = subtitle_font,
-        size = 22,
-        margin = ggplot2::margin(7, 0, 9, 0)
-      ),
-      plot.caption = ggplot2::element_text(family = subtitle_font),
-      axis.title = ggplot2::element_text(family = subtitle_font,
-                                         size = 18),
-      legend.text = ggplot2::element_text(
-        family = subtitle_font,
-        size = 18,
-        color = "#222222"
-      ),
-      axis.text = ggplot2::element_text(
-        family = mono_font,
-        size = 8,
-        color = "#222222"
-      )
-    )
-  }
-
+# Based a model described by Advanced Football Analytics
+# http://archive.advancedfootballanalytics.com/2007/07/what-makes-teams-win-4.html
 build_regression_model <- function(data) {
   lm(
     W ~ ZDefPassYardsPerAttempt +
@@ -339,13 +312,12 @@ run_report <- function() {
     plot_wins(data,
               all_years[1],
               all_years[2],
-              "NFL Predicted Wins vs Actual Wins") +
-    theme_darker()
+              "NFL Predicted Wins vs Actual Wins")
   ggsave(
     plot = plot,
     filename = "out/wins.png",
-    width = 16,
-    height = 9
+    width = 12,
+    height = 8
   )
 
   # Only the Patriots and Browns with all models and actual wins.
@@ -353,8 +325,7 @@ run_report <- function() {
     data %>% filter(TEAM.MASCOT == "Patriots" |
                       TEAM.MASCOT == "Browns")
   plot2 <-
-    plot_wins(data_two_teams, all_years[1], all_years[2], "Browns and Patriots") +
-    theme_darker()
+    plot_wins(data_two_teams, all_years[1], all_years[2], "Browns and Patriots")
   ggsave(
     plot = plot2,
     filename = "out/wins-detail.png",
@@ -367,8 +338,7 @@ run_report <- function() {
   data_seahawks <-
     data %>% filter(TEAM.MASCOT == "Seahawks", Year < 2020)
   plot_models <-
-    plot_models_only(data_seahawks, all_years[1], 2019, "Prediction Models") +
-    theme_darker()
+    plot_models_only(data_seahawks, all_years[1], 2019, "Prediction Models")
   ggsave(
     plot = plot_models,
     filename = "out/wins-models.png",
