@@ -7,6 +7,11 @@ source("theme_darker.R")
 
 source("dvoa_expected_wins.R")
 
+# Colors
+vividchalk_cyan <- "#339999"
+vividchalk_magenta <- "#9933CC"
+vividchalk_yellow <- "#FFCC00"
+
 # Mapping of abbreviation to name to mascot.
 #
 # Example: SEA, "Seattle Seahawks", "Seahawks"
@@ -173,13 +178,13 @@ plot_wins <- function(data, start_year, end_year, title) {
       alpha = 0.1
     ) +
     # Predicted wins
-    geom_line(aes(x = Year, y = PredictedW), color="#339999") + # cyan
+    geom_line(aes(x = Year, y = PredictedW), color = "#339999") + # cyan
     # Pythagorean wins
-    geom_line(aes(x = Year, y = PythagoreanW), color="#9933CC") + # magenta
+    geom_line(aes(x = Year, y = PythagoreanW), color = "#9933CC") + # magenta
     # DVOA predicted wins
-    geom_line(aes(x = Year, y = DVOAW), color="#FFCC00") + # yellow
+    geom_line(aes(x = Year, y = DVOAW), color = "#FFCC00") + # yellow
     # Actual
-    geom_line(color="white", size=1.5) + geom_point(color="white") +
+    geom_line(color = "white", size = 1.5) + geom_point(color = "white") +
     # Styling
     scale_y_continuous(breaks = seq(0, 16, by = 4)) +
     theme_minimal() + style_fonts("Sentinel", "Avenir", "InputSans") +
@@ -188,6 +193,51 @@ plot_wins <- function(data, start_year, end_year, title) {
       subtitle = "Predicted wins from an efficiency metrics model (cyan), Pythagorean wins (magenta), DVOA (yellow)",
       y = "Wins",
       caption = "Based on data from pro-football-reference.com and footballoutsiders.com"
+    ) +
+    facet_wrap(~ TEAM.MASCOT)
+}
+
+plot_models_only <- function(data, start_year, end_year, title) {
+  # Chart model prediction lines
+  chart <-
+    ggplot(data = data, aes(x = Year, y = W)) +
+    # Reference line: 8 wins
+    geom_hline(yintercept = 8, color = "#d8d8d8") +
+    # Predicted wins
+    geom_line(aes(x = Year, y = PredictedW), color = vividchalk_cyan) +
+    annotate(
+      "text",
+      x = 2002,
+      y = 10,
+      label = "AFA",
+      color = vividchalk_cyan
+    ) +
+    # Pythagorean wins
+    geom_line(aes(x = Year, y = PythagoreanW), color = vividchalk_magenta) +
+    annotate(
+      "text",
+      x = 2013.5,
+      y = 10,
+      label = "Pythagorean",
+      color = vividchalk_magenta
+    ) +
+    # DVOA predicted wins
+    geom_line(aes(x = Year, y = DVOAW), color = vividchalk_yellow) +
+    annotate(
+      "text",
+      x = 2006,
+      y = 5,
+      label = "DVOA",
+      color = vividchalk_yellow
+    ) +
+    # Styling
+    scale_y_continuous(breaks = seq(0, 16, by = 4)) +
+    theme_minimal() + style_fonts("Sentinel", "Avenir", "InputSans") +
+    labs(
+      title = str_interp("${title}, ${start_year}-${end_year}"),
+      subtitle = "Three models",
+      y = "Wins",
+      caption = "Data from pro-football-reference.com and footballoutsiders.com"
     ) +
     facet_wrap(~ TEAM.MASCOT)
 }
@@ -284,13 +334,13 @@ run_report <- function() {
     dir.create("out")
   }
 
+  # All teams, all models and predicted wins.
   plot <-
     plot_wins(data,
               all_years[1],
               all_years[2],
               "NFL Predicted Wins vs Actual Wins") +
     theme_darker()
-
   ggsave(
     plot = plot,
     filename = "out/wins.png",
@@ -298,11 +348,10 @@ run_report <- function() {
     height = 9
   )
 
-  # Just Patriots and Browns
+  # Only the Patriots and Browns with all models and actual wins.
   data_two_teams <-
     data %>% filter(TEAM.MASCOT == "Patriots" |
                       TEAM.MASCOT == "Browns")
-
   plot2 <-
     plot_wins(data_two_teams, all_years[1], all_years[2], "Browns and Patriots") +
     theme_darker()
@@ -310,6 +359,20 @@ run_report <- function() {
     plot = plot2,
     filename = "out/wins-detail.png",
     width = 12,
+    height = 4
+  )
+
+  # Only the Seahawks for a plot that shows the three prediction models
+  # (but not actual wins).
+  data_seahawks <-
+    data %>% filter(TEAM.MASCOT == "Seahawks", Year < 2020)
+  plot_models <-
+    plot_models_only(data_seahawks, all_years[1], 2019, "Prediction Models") +
+    theme_darker()
+  ggsave(
+    plot = plot_models,
+    filename = "out/wins-models.png",
+    width = 6,
     height = 4
   )
 }
