@@ -13,23 +13,23 @@ An article from 2007 outlined an approach for calculating expected wins based on
 
 ## Chart
 
-![Predicted vs Actual Wins](out/wins.png)
+![Predicted vs Actual Wins](out/wins.webp)
 
 ## Output
 
 Win correlation coefficients from the original Advanced Football Analytics model, this model trained on the 2002-2006 seasons, and this model trained on 2015-2019 seasons.
 
-|Stat|AFA Cor|GG Cor 2002|GG Cor 2015|
-|----|-------|------|--|
-|Off Pass|0.61|0.59|0.53|
-|Def Pass|-0.47|-0.45|-0.49|
-|Off Fumble|-0.46|-0.38|-0.41|
-|Off Int|-0.45|-0.45|-0.48|
-|Def FFumble|0.41|0.30|0.40|
-|Def Int|0.39|0.39|0.42|
-|Off Pen|-0.37|-0.27|-0.10|
-|Off Run|0.18|0.19|0.13|
-|Def Run|-0.04|-0.04|-0.04|
+| Stat        | AFA Cor | GG Cor 2002 | GG Cor 2015 |
+| ----------- | ------- | ----------- | ----------- |
+| Off Pass    | 0.61    | 0.59        | 0.53        |
+| Def Pass    | -0.47   | -0.45       | -0.49       |
+| Off Fumble  | -0.46   | -0.38       | -0.41       |
+| Off Int     | -0.45   | -0.45       | -0.48       |
+| Def FFumble | 0.41    | 0.30        | 0.40        |
+| Def Int     | 0.39    | 0.39        | 0.42        |
+| Off Pen     | -0.37   | -0.27       | -0.10       |
+| Off Run     | 0.18    | 0.19        | 0.13        |
+| Def Run     | -0.04   | -0.04       | -0.04       |
 
 The attributes of the multiple linear regression model.
 
