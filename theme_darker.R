@@ -65,7 +65,8 @@ theme_darker <- function (base_size = 11, base_family = "InputMono")
 
     plot.background = element_rect(colour = background_color, fill=background_color),
     plot.title = element_text(size = rel(1.2),
-                              margin = margin(b = half_line * 1.2, t = half_line), face="bold"),
-    plot.margin = margin(half_line, half_line, half_line, half_line),
+                              margin = margin(b = half_line * 1.2), face="bold"),
+    plot.title.position = "plot",
+    plot.margin = margin(half_line, half_line, half_line, half_line*1.5),
     complete = TRUE)
 }
