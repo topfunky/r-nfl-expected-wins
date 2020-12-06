@@ -261,8 +261,8 @@ build_regression_model <- function(data) {
   lm(
     W ~ ZDefPassYardsPerAttempt +
       ZDefRunYardsPerAttempt +
-      # ZDefIntRate +
-      # ZDefFumbleRate +
+      ZDefIntRate +
+      ZDefFumbleRate +
       ZOffPassYardsPerAttempt +
       ZOffRunYardsPerAttempt +
       ZOffPenYardsPerPlay +
