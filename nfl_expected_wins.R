@@ -11,6 +11,14 @@ source("dvoa_expected_wins.R")
 vividchalk_cyan <- "#339999"
 vividchalk_magenta <- "#9933CC"
 vividchalk_yellow <- "#FFCC00"
+vividchalk_green <- "#66FF00"
+vividchalk_orange <- "#EC691E"
+vividchalk_brown <- "#FF6600"
+vividchalk_lightcyan <- "#AAFFFF"
+vividchalk_grey <- "#AAAA77"
+vividchalk_darkgreen <- "#33AA00"
+vividchalk_darkcyan <- "#44B4CC"
+vividchalk_altyellow <- "#DDE93D"
 
 # Mapping of abbreviation to name to mascot.
 #
@@ -31,10 +39,10 @@ clean_winner_star_plus <- function(data) {
 
 calculate_offense_metrics <- function(data) {
   # ✔️Off Pass Yds/Att
-  # ✔️Off Fumble Rate : fumbles per total number of plays
-  # ✔️Off Int Rate : interceptions per pass attempt
-  # ✔️Off Pen Rate : penalty yards per total number of plays
   # ✔️Off Run Yds/Att
+  # ✔️Off Int Rate : interceptions per pass attempt
+  # ✔️Off Fumble Rate : fumbles per total number of plays
+  # ✔️Off Pen Rate : penalty yards per total number of plays
   tmpData <- mutate(
     data,
     OffPassYardsPerAttempt = Yds.1 / Att,
@@ -83,10 +91,10 @@ calculate_offense_metrics <- function(data) {
 
 calculate_defense_metrics <- function(data) {
   # Def Pass Yds/Att
+  # Def Run Yds/Att
   # Def FFumble Rate : Fumbles per total plays
   # TODO: Currently using Fumbles; Needs to be Forced Fumbles only
   # Def Int Rate
-  # Def Run Yds/Att
 
   tmpData <- mutate(
     data,
@@ -180,7 +188,7 @@ plot_wins <- function(data, start_year, end_year, title) {
     # Predicted wins
     geom_line(aes(x = Year, y = PredictedW), color = vividchalk_cyan) +
     # Pythagorean wins
-    geom_line(aes(x = Year, y = PythagoreanW), color = vividchalk_magenta) +
+    geom_line(aes(x = Year, y = PythagoreanW), color = vividchalk_orange) +
     # DVOA predicted wins
     geom_line(aes(x = Year, y = DVOAW), color = vividchalk_yellow) +
     # Actual
@@ -190,7 +198,7 @@ plot_wins <- function(data, start_year, end_year, title) {
     theme_minimal() +
     labs(
       title = str_interp("${title}, ${start_year}-${end_year}"),
-      subtitle = "Predicted wins from an efficiency metrics model (cyan), Pythagorean wins (magenta), DVOA (yellow)",
+      subtitle = "Predicted wins from an efficiency metrics model (cyan), Pythagorean wins (orange), DVOA (yellow)",
       y = "Wins",
       caption = "Based on data from pro-football-reference.com and footballoutsiders.com"
     ) +
@@ -209,19 +217,19 @@ plot_models_only <- function(data, start_year, end_year, title) {
     annotate(
       "text",
       x = 2002,
-      y = 10,
+      y = 10.5,
       label = "AFA",
       color = vividchalk_cyan,
       family = "InputMono"
     ) +
     # Pythagorean wins
-    geom_line(aes(x = Year, y = PythagoreanW), color = vividchalk_magenta) +
+    geom_line(aes(x = Year, y = PythagoreanW), color = vividchalk_orange) +
     annotate(
       "text",
       x = 2013.75,
-      y = 9,
+      y = 10,
       label = "Pythagorean",
-      color = vividchalk_magenta,
+      color = vividchalk_orange,
       family = "InputMono"
     ) +
     # DVOA predicted wins
@@ -239,7 +247,7 @@ plot_models_only <- function(data, start_year, end_year, title) {
     theme_minimal() +
     labs(
       title = str_interp("${title}, ${start_year}-${end_year}"),
-      subtitle = "Three models",
+      subtitle = "Three data models",
       y = "Wins",
       caption = "Data from pro-football-reference.com and footballoutsiders.com"
     ) +
@@ -253,8 +261,8 @@ build_regression_model <- function(data) {
   lm(
     W ~ ZDefPassYardsPerAttempt +
       ZDefRunYardsPerAttempt +
-      ZDefIntRate +
-      ZDefFumbleRate +
+      # ZDefIntRate +
+      # ZDefFumbleRate +
       ZOffPassYardsPerAttempt +
       ZOffRunYardsPerAttempt +
       ZOffPenYardsPerPlay +
@@ -274,7 +282,7 @@ build_dvoa_regression_model <- function(data) {
 # Traditional Bill James method for calculating expected wins.
 # https://en.wikipedia.org/wiki/Pythagorean_expectation
 calculate_pythagorean_wins <- function(PF, PA) {
-  (1 / (1 + (PA / PF) ^ 2)) * 16
+  (1 / (1 + (PA / PF) ^ 2.37)) * 16
 }
 
 load_data_and_build_model <- function(training_years, all_years) {
