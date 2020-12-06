@@ -13,7 +13,7 @@ An article from 2007 outlined an approach for calculating expected wins based on
 
 ## Chart
 
-![Predicted vs Actual Wins](out/wins.webp)
+![Predicted vs Actual Wins](out/wins-fs8.png)
 
 ## Output
 
