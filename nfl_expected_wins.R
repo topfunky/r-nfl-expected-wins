@@ -346,7 +346,7 @@ run_report <- function() {
   data_seahawks <-
     data %>% filter(TEAM.MASCOT == "Seahawks", Year < 2020)
   plot_models <-
-    plot_models_only(data_seahawks, all_years[1], 2019, "Prediction Models")
+    plot_models_only(data_seahawks, all_years[1], 2019, "NFL Win Prediction Models")
   ggsave(
     plot = plot_models,
     filename = "out/wins-models.png",
