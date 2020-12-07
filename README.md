@@ -2,6 +2,8 @@
 
 An experiment to build a predictive model in R that recreates an article from Advanced Football Analytics.
 
+A separate [blog post](https://topfunky.com/2020/linear-regression-model/) describes the approach and shows other charts generated from the model.
+
 ## Description
 
 An article from 2007 outlined an approach for calculating expected wins based on offensive and defensive efficiency metrics. This project is an attempt to implement the prediction model in R.
@@ -70,3 +72,5 @@ Data from:
 
 - [Pro Football Reference](https://www.pro-football-reference.com/)
 - [Football Outsiders](https://www.footballoutsiders.com)
+
+_DISCLAIMER_: The format and availability of data from Football Outsiders changed after this code was originally written. Modifications may be needed to build the DVOA model.
