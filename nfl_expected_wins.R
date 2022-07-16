@@ -185,12 +185,12 @@ plot_wins <- function(data, start_year, end_year, title) {
       size = 4,
       alpha = 0.1
     ) +
-    # Predicted wins
-    geom_line(aes(x = Year, y = PredictedW), color = vividchalk_cyan) +
-    # Pythagorean wins
-    geom_line(aes(x = Year, y = PythagoreanW), color = vividchalk_orange) +
     # DVOA predicted wins
     geom_line(aes(x = Year, y = DVOAW), color = vividchalk_yellow) +
+    # Pythagorean wins
+    geom_line(aes(x = Year, y = PythagoreanW), color = vividchalk_orange) +
+    # Predicted wins
+    geom_line(aes(x = Year, y = PredictedW), color = vividchalk_cyan) +
     # Actual
     geom_line(color = "white", size = 1) + geom_point(color = "white") +
     # Styling
@@ -353,6 +353,33 @@ run_report <- function() {
     width = 6,
     height = 4
   )
+
+  return(data)
 }
 
-run_report()
+result = run_report()
+
+
+require(rpart)
+require(rpart.plot)
+binary.model <- rpart(
+  W ~ ZDefPassYardsPerAttempt +
+    ZDefRunYardsPerAttempt +
+    ZDefIntRate +
+    ZDefFumbleRate +
+    ZOffPassYardsPerAttempt +
+    ZOffRunYardsPerAttempt +
+    ZOffPenYardsPerPlay +
+    ZOffIntRate  +
+    ZOffFumbleRate,
+  data = result #,
+  # cp = 0.02
+)
+
+binary.model |> rpart.plot(
+  main = "Expected Wins",
+  roundint = FALSE,
+  cex = 0.8,
+  fallen.leaves = TRUE,
+  extra = 101
+)
